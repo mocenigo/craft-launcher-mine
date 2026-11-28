@@ -227,6 +227,9 @@ pub struct LauncherUi {
     pub(crate) pictures: std::collections::HashMap<(String, String), crate::details::Picture>,
     started: bool,
     applied_theme: Option<theme::ThemeChoice>,
+    /// macOS: the title bar's own context, at the platform's scale while the rest of the window zooms.
+    #[cfg(not(target_arch = "wasm32"))]
+    title_pane: Option<crate::title_pane::TitlePane>,
     /// The OS asks for fewer animations: what the host last said, and the context's time to ask
     /// it again at.
     pub(crate) reduce_motion: bool,
@@ -355,6 +358,8 @@ impl LauncherUi {
             pictures: std::collections::HashMap::new(),
             started: false,
             applied_theme: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            title_pane: None,
             reduce_motion: false,
             motion_recheck: 0.0,
             applied_motion: None,
@@ -387,6 +392,10 @@ impl LauncherUi {
         egui_extras::install_image_loaders(ctx);
         self.fonts_ready = false;
         self.applied_theme = None;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.title_pane = None;
+        }
         self.applied_motion = None;
         self.motion_recheck = 0.0;
         #[cfg(not(target_arch = "wasm32"))]
@@ -1050,11 +1059,32 @@ impl LauncherUi {
         }
 
         // The bars' separator lines are the hairlines under the header and over the footer.
-        egui::Panel::top("header")
-            .frame(egui::Frame::new().fill(tokens.bg))
-            .exact_size(crate::views::HEADER_H)
-            .resizable(false)
-            .show(ui, |ui| self.header(ui, host.title_bar()));
+        let bar = host.title_bar();
+        // macOS: the header is the title bar, drawn by its own context at the platform's scale; the window's
+        // context keeps its place.
+        #[cfg(not(target_arch = "wasm32"))]
+        let pane = (bar == TitleBar::MacOs).then(|| self.title_pane.take().unwrap_or_else(|| crate::title_pane::TitlePane::new(&ctx)));
+        #[cfg(target_arch = "wasm32")]
+        let pane: Option<()> = None;
+        let header_h = if pane.is_some() { crate::views::HEADER_H / ctx.zoom_factor() } else { crate::views::HEADER_H };
+        let header = egui::Panel::top("header").frame(egui::Frame::new().fill(tokens.bg)).exact_size(header_h).resizable(false).show(ui, |ui| {
+            if pane.is_none() {
+                self.header(ui, bar);
+            }
+        });
+        #[cfg(target_arch = "wasm32")]
+        let _ = header;
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(mut pane) = pane {
+            pane.show(&ctx, header.response.rect.min, self.settings.theme, self.cjk_font, |ui| {
+                egui::Panel::top("header")
+                    .frame(egui::Frame::new().fill(tokens.bg))
+                    .exact_size(crate::views::HEADER_H)
+                    .resizable(false)
+                    .show(ui, |ui| self.header(ui, bar));
+            });
+            self.title_pane = Some(pane);
+        }
         egui::Panel::bottom("footer")
             .frame(egui::Frame::new().fill(tokens.bg).inner_margin(egui::Margin::symmetric(20, 0)))
             .exact_size(crate::views::FOOTER_H)

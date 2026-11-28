@@ -40,6 +40,8 @@ pub mod settings;
 mod settings_dialog;
 mod sheet;
 pub mod theme;
+#[cfg(not(target_arch = "wasm32"))]
+mod title_pane;
 mod versions;
 mod views;
 mod widgets;
