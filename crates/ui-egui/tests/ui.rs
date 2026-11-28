@@ -4513,6 +4513,10 @@ fn control_wheel_zooms_the_main_ui() {
 fn the_macos_title_bar_keeps_its_size_when_the_launcher_zooms() {
     let (mut h, _) = harness_with_title_bar(events(), ViewMode::Grid, egui::Theme::Dark, true, 2.0, artcraft_launcher_ui_egui::TitleBar::MacOs);
     h.run_steps(4);
+    // Screen readers name both bars.
+    for name in ["Title bar", "Status bar"] {
+        h.get_by_role_and_label(egui::accesskit::Role::Pane, name);
+    }
     // Sizes on screen, in pixels: the window's points times its pixels per point.
     let on_screen = |h: &Harness<'_, Option<LauncherUi>>, label: &str| h.get_by_label(label).rect().size() * h.ctx.pixels_per_point();
     let (bar, brand, card) = (on_screen(&h, "Settings"), on_screen(&h, "Craft App Suite"), on_screen(&h, "More actions for PhotoCraft"));

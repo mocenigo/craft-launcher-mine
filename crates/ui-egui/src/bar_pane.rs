@@ -25,18 +25,20 @@ impl BarPane {
         Self { pane, fonts: None, theme: None }
     }
 
-    /// Draws `bar` with the window's fonts and theme at `zoom`, over `rect` (window points), in a pane that lies
-    /// from `rect`'s left edge and the top of `window` to its bottom right corner, so the bar's popups can open
-    /// over the page. `bar` gets a `Ui` laid out over the bar's rect, in pane points.
+    /// Draws `bar` with the window's fonts and theme (`look`) at `zoom`, over `rect` (window points), named `label` for
+    /// screen readers, in a pane that lies from `rect`'s left edge and the top of `window` to its bottom right
+    /// corner, so the bar's popups can open over the page. `bar` gets a `Ui` laid out over the bar's rect, in pane
+    /// points.
     pub(crate) fn show(
         &mut self,
         window: &egui::Context,
+        label: &str,
         zoom: f32,
         rect: egui::Rect,
-        choice: ThemeChoice,
-        cjk: Option<Lang>,
+        (choice, cjk): (ThemeChoice, Option<Lang>),
         bar: impl FnOnce(&mut egui::Ui, egui::Rect),
     ) {
+        self.pane.set_label(label);
         let ctx = self.pane.context();
         if self.fonts != Some(cjk) {
             ctx.set_fonts(theme::font_definitions(cjk));

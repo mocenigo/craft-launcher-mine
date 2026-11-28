@@ -1117,13 +1117,13 @@ impl LauncherUi {
         let _ = (header, footer);
         #[cfg(not(target_arch = "wasm32"))]
         if let Some((mut title, mut status)) = panes {
-            let (theme, cjk) = (self.settings.theme, self.cjk_font);
-            title.show(&ctx, 1.0, header.response.rect, theme, cjk, |ui, rect| {
+            let look = (self.settings.theme, self.cjk_font);
+            title.show(&ctx, tl!("Title bar"), 1.0, header.response.rect, look, |ui, rect| {
                 ui.painter().rect_filled(rect, 0.0, tokens.bg);
                 self.header(ui, bar);
                 ui.painter().hline(rect.x_range(), rect.bottom() - 0.5, ui.visuals().widgets.noninteractive.bg_stroke);
             });
-            status.show(&ctx, crate::bar_pane::STATUS_ZOOM, footer.response.rect, theme, cjk, |ui, rect| {
+            status.show(&ctx, tl!("Status bar"), crate::bar_pane::STATUS_ZOOM, footer.response.rect, look, |ui, rect| {
                 ui.painter().rect_filled(rect, 0.0, tokens.bg);
                 ui.painter().hline(rect.x_range(), rect.top() + 0.5, ui.visuals().widgets.noninteractive.bg_stroke);
                 ui.scope_builder(egui::UiBuilder::new().max_rect(rect.shrink2(egui::vec2(20.0, 0.0))), |ui| self.footer(ui));
